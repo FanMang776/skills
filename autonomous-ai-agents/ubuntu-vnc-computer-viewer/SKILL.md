@@ -85,16 +85,43 @@ noVNC dir serves vnc.html.)
 - Root URL returns a directory listing (python http.server style) if `--web`
   points at the wrong dir — check for `vnc.html`.
 
-### 5. User fills the plugin dialog
+### 5. Configure the endpoint (websocket mode — see Pitfall #1)
 
 - Endpoint picker: **Local** (LAN machine, not Cloud).
 - OS toggle only has Mac/Windows (upstream has no Linux option — it's just
   instructional text; leave it alone).
-- Computer address: **`http://IP:6080/vnc.html`** (classified as iframe mode,
-  "Web viewer page — will be embedded"), password = the x11vnc password.
+- Computer address: **`ws://IP:6080/websockify`** — WebSocket direct mode.
+  Do NOT use `http://IP:6080/vnc.html`: it classifies as iframe mode and is
+  silently blocked in the packaged desktop app (black panel, no error).
+- Password: prompted on first connect — enter the x11vnc password.
+- If the panel shows a black screen WITH a blue status dot after connect,
+  the link is up: click the fullscreen expand button (rebuilds the render
+  surface) — pane view often stays black while fullscreen renders fine.
 
 ## Pitfalls
 
+- **PACKAGED DESKTOP + http:// = iframe mode SILENTLY DEAD.** An `http://IP:6080/vnc.html` address classifies as iframe mode; in the packaged Electron app http iframes get blocked with NO error — panel stays black, "click connect does nothing". THE FIX: WebSocket direct mode — set endpoint address to `ws://IP:6080/websockify` (classifyAddress treats ws:// as websocket mode; the plugin bundles its own noVNC from CDN, no iframe). Password is still prompted on first connect.
+- Endpoint config lives in Chromium LevelDB, NOT an editable file while running:
+  `C:\Users\<user>\AppData\Roaming\Hermes\Local Storage\leveldb\`, key
+  `_file://\x00\x01hermes.plugin.computer-viewer.endpoints` (value = JSON
+  array with a leading `\x01` type byte). Live DB is locked by Electron —
+  kill all Hermes processes BEFORE writing, relaunch after, verify with a
+  plyvel read-back. Read-only inspection works on a copy anytime.
+- Killing Hermes from an agent session KILLS THE AGENT SESSION TOO (the
+  desktop app hosts it) — run kill/swap/relaunch as a DETACHED standalone
+  script (PowerShell `Start-Process python ...` or DETACHED_PROCESS), never
+  inline. Template flow: kill Hermes → wait 3s → copy leveldb aside →
+  plyvel-edit endpoints JSON → swap files back → plyvel verify → Popen relaunch.
+- websockify zombie processes accumulate from repeated restarts; held ESTAB
+  sockets stall new connect attempts silently (`ss -tnp | grep 6080`). pkill
+  all, start exactly ONE, verify `pgrep -fc websockify` == 1.
+- Black screen with blue status dot after connect = render issue (insecure
+  context), NOT a connection failure — check websockify log for the WS hit,
+  then click fullscreen expand (rebuilds the render surface).
+- Silent password failure: noVNC wrong password = quiet return to start
+  screen. Verify credentials via Playwright with a deliberately wrong
+  password reading console (`password check failed!` = transport fine,
+  password wrong).
 - Display number is frequently `:1` on modern GDM/Ubuntu, not `:0`.
 - Wayland sessions are invisible to x11vnc — session must be "Ubuntu on Xorg"
   (check `ps` for Xorg vs Xwayland).
