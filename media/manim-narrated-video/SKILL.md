@@ -1,14 +1,7 @@
 ---
 name: manim-narrated-video
 description: Use when making Manim+edge-tts narrated videos with subtitles.
-version: 2.0.0
-author: Ch Jiang (FanMang776), Hermes Agent
 license: MIT
-platforms: [windows]
-metadata:
-  hermes:
-    tags: [manim, edge-tts, video, narration, subtitles, chinese]
-    category: media
 ---
 
 # Manim + edge-tts 旁白视频完整制作流程
@@ -23,10 +16,10 @@ metadata:
 
 ## Prerequisites
 
-- **Python 3.13 + manim 0.21+**：本机常与默认 python（3.14）共存，manim 装在特定版本——先 `python -c "import manim"` 确认，找不到就换 `C:/Python313/python.exe` 显式调用
+- **manim 0.21+**（Python 3.8+）：先 `python -c "import manim"` 确认当前解释器能导入；多版本共存的机器上，用能导入 manim 的那个解释器的完整路径显式调用
 - **edge-tts**：`pip install edge-tts`，无需 API key
 - **ffmpeg/ffprobe** 在 PATH（裁剪、拼接、抽帧、音量检测全靠它）
-- **字体**：中文用 Microsoft YaHei（Windows 自带），代码用 Consolas
+- **字体**：中文视频需要系统里有覆盖中文字形的字体（Windows 自带 Microsoft YaHei，macOS 可用 PingFang SC，Linux 推荐 Noto Sans CJK SC）——把示例里的字体名替换成你机器上实际可用的
 - 无 LaTeX 也可跑：全部用 `Text()`，禁 MathTex/DecimalNumber
 
 ## 工作流总览
@@ -47,7 +40,7 @@ metadata:
 ```python
 import asyncio, edge_tts, json
 
-comm = edge_tts.Communicate(text, "zh-CN-YunxiNeural", rate="+10%",
+comm = edge_tts.Communicate(text, voice, rate="+10%",
                             boundary="WordBoundary")   # 显式传，默认是 SentenceBoundary
 async for chunk in comm.stream():
     if chunk["type"] == "audio":
@@ -65,7 +58,7 @@ async for chunk in comm.stream():
 - WordBoundary 的词文本不含标点：把词流与原稿做"非标点字符数"对齐，在原稿的句号/问号处断句
 - `offset` 单位是 100ns；首词自带约 0.1s 引擎前置
 - **同一文本重新生成会得到新的配音**——音频、词边界、字幕 cue 必须同批次，绝不能新音频配旧 cue
-- 语速档实测：-8%≈3.5字/秒，+10%≈4.9字/秒，+20%≈5.3字/秒。定字数前先试听实测
+- 中文语速档实测（其他语言自行实测）：-8%≈3.5字/秒，+10%≈4.9字/秒，+20%≈5.3字/秒。定字数前先试听实测
 
 ## Step 3 — 字幕 cue 推导
 
@@ -93,7 +86,7 @@ async for chunk in comm.stream():
 **视觉与渲染约束：**
 
 - `config.background_color = "#F5F6F8"` 显式设白底（Manim 默认黑底，深色标题会隐形）
-- 中文 `font="Microsoft YaHei"`；**禁用 emoji**（YaHei 无字形，渲染成十六进制方块）
+- 中文字体按平台选（Microsoft YaHei / PingFang SC / Noto Sans CJK SC）；**禁用 emoji**（多数视频字体无 emoji 字形，渲染成十六进制方块）
 - `subtitle()` 内置超宽缩放：文本宽超 13.4 单位自动等比缩到框内
 - 卡片组件化：`mini_card` / `big_card`（标题+注释行）/ `tag`（左上角徽章），新场景先复用再新造
 
@@ -132,11 +125,11 @@ ffmpeg -f concat -safe 0 -i concat.txt -c copy final.mp4
 
 ## Pitfalls
 
-- **静音段估算字幕时间**：偏早 1.5~4 秒（EP3 连环返工根因）。永远用引擎边界时间
+- **静音段估算字幕时间**：偏早 1.5~4 秒（连续返工根因）。永远用引擎边界时间
 - **只取时长不挂音轨**：`seg()` 和 `add_sound` 必须封装成一个 `audio_for()`，拆开就会忘
 - **手工字幕索引**：cue 列表一变，`subs[3]` 到 `subs[9]` 的手工序列全错且无声
 - **emoji**：渲染成十六进制方块，卡片文案用纯文字
-- **默认 python 没有 manim**：多版本共存机器上先确认解释器路径
+- **多版本 Python 共存**：默认解释器可能没有 manim，先确认再调用
 - **新音频配旧 cue**：重新生成配音后必须重算全部 cue
 - **压缩改写字幕**：观众听到字幕里没有的词就是"缺文字"，字幕逐字对应口播
 
