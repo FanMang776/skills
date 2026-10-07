@@ -32,17 +32,19 @@ do the cognitive work themselves or nothing is learned.
    proceeding — bad corpus poisons every later step.
 3. **The three questions.** Every answer must cite the corpus (file + section);
    say "not covered by the corpus" rather than invent. Merge Q1+Q2 into
-   `knowledge-map.md`.
+   `knowledge-map.md` (template: `templates/knowledge-map.md`).
    - Q1 Consensus: "Based only on the corpus, what five core mental models do
      all experts in this field share? For each: one-line definition, source,
      and what it explains."
    - Q2 Divergence: "List 3 genuine controversies among experts found in the
      corpus, with the strongest argument for each side and sources." If the
      corpus shows high consensus, say so — never fabricate disagreement.
-4. **Set the quiz.** Write `quiz.md`: 10 deep questions covering all five
-   frameworks and all controversies. Test understanding and application
-   (scenarios, comparisons, whys), not term recall. Tag each question with the
-   framework it probes; attach a grading rubric (bullet key points).
+4. **Set the quiz.** Write `quiz.md` (template: `templates/quiz.md`): 10 deep
+   questions covering all five frameworks and all controversies. Test
+   understanding and application (scenarios, comparisons, whys), not term
+   recall. Tag each question with the framework it probes; attach a grading
+   rubric (bullet key points). The template also carries the coverage map and
+   the drill-round log.
 5. **Drill loop (the bulk).** Round = learner answers in their own words →
    agent grades per rubric (right / partial / wrong + missed points) → for each
    miss, ask "where exactly is your answer wrong, which key points did you
