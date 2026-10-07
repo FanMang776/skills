@@ -37,3 +37,7 @@ Hermes Agent 技能集合。每个 `media/`、`research/`、`windows/` 等分类
 
 - 技能均为实践验证后的沉淀，SKILL.md 内含完整的踩坑记录（Pitfalls）和收工验收清单（Verification）
 - 平台兼容性以各技能 frontmatter 的 `platforms` 字段为准
+
+## License
+
+[MIT](LICENSE) © 2026 Lane (FanMang776)
