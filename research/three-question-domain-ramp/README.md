@@ -34,5 +34,4 @@
 
 ## 来源
 
-- 视频源页与完整转写：wiki `sources/mit-xueba-ai-learning-douyin-20261007`
 - 原始视频：[抖音 7689131743694421369](https://v.douyin.com/JxKddSiFKhk/)（账号：学习有了方法）
