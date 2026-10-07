@@ -1,6 +1,6 @@
 # FanMang776 Skills
 
-Hermes Agent 技能集合。每个 `media/`、`windows/` 等分类目录下的子文件夹是一个独立技能，核心是 `SKILL.md`。
+Hermes Agent 技能集合。每个 `media/`、`research/`、`windows/` 等分类目录下的子文件夹是一个独立技能，核心是 `SKILL.md`。
 
 ## 技能列表
 
@@ -10,6 +10,12 @@ Hermes Agent 技能集合。每个 `media/`、`windows/` 等分类目录下的�
 |---|---|
 | [manim-narrated-video](media/manim-narrated-video/SKILL.md) | Manim + edge-tts 旁白视频完整制作流程：文案 → 配音（词级时间戳）→ 字幕对齐 → 草稿帧检 → 1080p60 渲染 → 字幕全量审计收工。含同步防漂移架构与全部踩坑记录 |
 | [douyin-video-transcript](media/douyin-video-transcript/SKILL.md) | 抖音视频元数据 + 口播文案提取（Playwright msedge headless + faster-whisper 本地转写） |
+
+### research
+
+| 技能 | 说明 |
+|---|---|
+| [three-question-domain-ramp](research/three-question-domain-ramp/SKILL.md) | 三问法速通陌生领域：共识五框架 + 分歧争议图 + AI 出题演练循环，agent 只做出题人判卷人，含防幻觉/防代答纪律与双模板 |
 
 ### windows
 
