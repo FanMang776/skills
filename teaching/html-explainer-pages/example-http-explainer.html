@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模板：一个 HTTP 请求的一生</title>
+<style>
+/* ========== 设计令牌：浅色是默认主题，改这里即可整体换肤 ========== */
+:root{
+  --paper:#F7F8FA; --panel:#FFFFFF; --line:#E3E8EE; --line2:#C9D4E0;
+  --blue:#2B6CB0; --blue-dim:#7FA8D0; --amber:#C07A1D; --ok:#2F8F5B; --bad:#C04545;
+  --text:#1E2A36; --dim:#5C6B7A;
+  --sans:"Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif;
+  --serif:"Noto Serif SC","Source Han Serif SC","SimSun",serif;
+  --mono:ui-monospace,Consolas,"Cascadia Mono",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--text);font-family:var(--sans);line-height:1.75;font-size:15.5px}
+main{max-width:880px;margin:0 auto;padding:0 22px}
+section{padding:64px 0 30px;border-top:1px solid var(--line)}
+section:first-of-type{border-top:none}
+h2{font-family:var(--serif);font-weight:700;font-size:29px;margin-bottom:6px}
+h2 .no{font-family:var(--mono);font-size:13px;color:var(--blue);margin-right:14px;font-weight:400;vertical-align:3px}
+.lede{color:var(--dim);max-width:640px;margin-bottom:26px}
+.lede b{color:var(--text);font-weight:600}
+code{font-family:var(--mono);font-size:.88em;background:#EDF1F6;border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:var(--blue);white-space:nowrap}
+.note{color:var(--dim);font-size:13.5px}
+
+/* hero */
+.hero{min-height:88vh;display:flex;flex-direction:column;justify-content:center;position:relative;border:none;padding-top:0}
+.kicker{font-family:var(--mono);color:var(--blue);font-size:13px;letter-spacing:.25em;margin-bottom:18px}
+h1{font-family:var(--serif);font-weight:900;font-size:clamp(32px,5.6vw,54px);line-height:1.28;margin-bottom:14px;max-width:16em}
+.hero p{color:var(--dim);max-width:36em;margin-bottom:26px}
+.scrollhint{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);color:var(--blue);font-family:var(--mono);font-size:12px;letter-spacing:.2em;animation:bob 2.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
+#heroSvg{display:block;width:100%;max-width:720px;height:300px;margin:0 auto}
+#heroSvg .nd{fill:var(--blue);opacity:0;transform:scale(.3);transform-origin:center;transform-box:fill-box;transition:opacity .5s,transform .5s}
+#heroSvg .ed{stroke:var(--blue-dim);stroke-width:1.5;stroke-dasharray:200;stroke-dashoffset:200}
+#heroSvg text{font-family:var(--mono);font-size:10.5px;fill:var(--dim);opacity:0;transition:opacity .5s .2s}
+.on #heroSvg .nd{opacity:.95;transform:scale(1)}
+.on #heroSvg .ed{stroke-dashoffset:0}
+.on #heroSvg text{opacity:1}
+
+/* yaml + 侧栏联动 */
+.yamlwrap{display:grid;grid-template-columns:minmax(0,460px) minmax(0,1fr);gap:26px;align-items:start}
+.yaml{background:var(--panel);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12.8px;line-height:1.9;overflow-x:auto;box-shadow:0 4px 18px rgba(30,42,54,.06)}
+.yaml .hd{padding:9px 14px;border-bottom:1px solid var(--line);color:var(--dim);font-size:11.5px;letter-spacing:.08em}
+.yaml pre{padding:12px 0;white-space:pre}
+.yaml .ln{display:block;padding:0 16px;color:#3D4E5E;opacity:0;transform:translateX(-8px);transition:opacity .35s,transform .35s}
+.on .yaml .ln{opacity:1;transform:none}
+.yaml .k{color:var(--blue)} .yaml .s{color:var(--ok)} .yaml .n{color:var(--amber)} .yaml .c{color:#8A99A8}
+.yaml .ln.hot{background:rgba(43,108,176,.08);border-left:2px solid var(--blue);padding-left:14px}
+.side .item{border-left:2px solid var(--line);padding:8px 0 8px 16px;margin-bottom:4px;color:var(--dim);transition:.3s}
+.side .item b{display:block;color:var(--text);font-weight:600;font-size:14.5px}
+.side .item.hit{border-color:var(--blue);background:linear-gradient(90deg,rgba(43,108,176,.07),transparent)}
+@media(max-width:720px){.yamlwrap{grid-template-columns:1fr}}
+
+/* tabs */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tabs button{font-family:var(--sans);font-size:14px;background:var(--panel);border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:8px 16px;cursor:pointer;transition:.2s}
+.tabs button:hover{color:var(--text);border-color:var(--line2)}
+.tabs button[aria-selected="true"]{color:#fff;background:var(--blue);border-color:var(--blue);font-weight:600}
+.prim{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px 22px;box-shadow:0 4px 18px rgba(30,42,54,.06)}
+.pcard h3{font-family:var(--serif);font-size:19px;margin-bottom:4px}
+.pcard .en{font-family:var(--mono);font-size:11.5px;color:var(--blue);margin-bottom:12px}
+.pcard p{color:var(--dim);font-size:14px;margin-bottom:10px}
+.pcard .chip{display:inline-block;font-size:12px;border:1px solid var(--line2);border-radius:99px;padding:1px 10px;margin:2px 4px 2px 0;color:var(--dim)}
+@media(max-width:720px){.prim{grid-template-columns:1fr}}
+
+/* 映射动画 */
+.map{display:grid;grid-template-columns:1fr 70px 1fr;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:22px}
+.col h4{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;color:var(--dim);margin-bottom:12px;font-weight:400}
+.row{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:7px 12px;margin-bottom:8px;font-family:var(--mono);font-size:12.5px;opacity:.35;transition:.5s}
+.row.on{opacity:1;border-color:var(--blue-dim)}
+.row .db{color:var(--amber)} .row .ont{color:var(--blue)} .row .m{margin-left:auto;font-size:11px;color:var(--dim)}
+.mid svg{width:100%;height:220px}
+.mid line{stroke:var(--blue);stroke-width:1.2;stroke-dasharray:60;stroke-dashoffset:60;transition:stroke-dashoffset .6s ease .1s}
+.on .mid line{stroke-dashoffset:0}
+@media(max-width:640px){.map{grid-template-columns:1fr}.mid{display:none}}
+
+/* 步骤链 */
+.step{display:grid;grid-template-columns:34px 1fr;gap:14px;position:relative;padding-bottom:26px;opacity:.42;transition:opacity .45s}
+.step::before{content:"";position:absolute;left:16px;top:34px;bottom:0;width:2px;background:var(--line)}
+.step:last-child::before{display:none}
+.step .b{width:34px;height:34px;border-radius:50%;border:2px solid var(--line2);background:var(--panel);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;color:var(--dim);transition:.45s;position:relative;z-index:1}
+.step.lit{opacity:1}
+.step.lit .b{border-color:var(--blue);color:var(--blue);box-shadow:0 0 0 4px rgba(43,108,176,.1)}
+.step .t b{display:block;font-weight:600}
+.step .t span{color:var(--dim);font-size:13.5px}
+.step .tag{display:inline-block;font-size:11px;font-family:var(--mono);border:1px solid var(--line2);border-radius:4px;padding:0 6px;margin-left:8px;color:var(--dim)}
+.btnrun{font-family:var(--sans);font-size:14.5px;font-weight:600;background:var(--blue);color:#fff;border:none;border-radius:6px;padding:10px 22px;cursor:pointer;margin-bottom:6px}
+.btnrun:disabled{opacity:.5;cursor:default}
+
+/* 时间线 */
+.tl{display:flex;align-items:stretch;margin:18px 0 8px;overflow-x:auto}
+.ver{flex:1 1 0;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;position:relative;opacity:0;transform:translateY(10px);transition:.5s}
+.on .ver{opacity:1;transform:none}
+.ver:nth-child(3){transition-delay:.15s}.ver:nth-child(5){transition-delay:.3s}.ver:nth-child(7){transition-delay:.45s}
+.ver .v{font-family:var(--mono);font-size:15px;color:var(--blue);font-weight:600}
+.ver .d{font-size:12.5px;color:var(--dim);margin-top:4px}
+.ver.cur{border-color:var(--blue)}
+.tlarr{align-self:center;color:var(--dim);padding:0 8px;font-family:var(--mono)}
+
+@media(prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero" id="s0">
+  <div class="kicker">模板 · 换掉这些内容就是你的页面</div>
+  <h1>一个 HTTP 请求的一生</h1>
+  <p>这是<b>通用浅色模板</b>的演示内容：从你在地址栏敲下回车，到屏幕画出像素，中间发生了什么。
+  六屏叙事，每屏一个概念、一种可视化载体——照这个骨架换成你自己的材料即可。</p>
+  <svg id="heroSvg" viewBox="0 0 720 300" aria-label="请求路径动画">
+    <line class="ed" x1="360" y1="150" x2="140" y2="70"/><line class="ed" x1="140" y1="70" x2="80" y2="180"/>
+    <line class="ed" x1="360" y1="150" x2="580" y2="80"/><line class="ed" x1="580" y1="80" x2="650" y2="190"/>
+    <line class="ed" x1="360" y1="150" x2="360" y2="250"/>
+    <circle class="nd" cx="140" cy="70" r="11"/><text x="140" y="50" text-anchor="middle">DNS</text>
+    <circle class="nd" cx="80" cy="180" r="8"/><text x="80" y="206" text-anchor="middle">Root/TLD</text>
+    <circle class="nd" cx="360" cy="150" r="16"/><text x="360" y="184" text-anchor="middle">浏览器</text>
+    <circle class="nd" cx="580" cy="80" r="11"/><text x="580" y="58" text-anchor="middle">CDN</text>
+    <circle class="nd" cx="650" cy="190" r="11"/><text x="650" y="216" text-anchor="middle">源站</text>
+    <circle class="nd" cx="360" cy="250" r="8"/><text x="360" y="276" text-anchor="middle">缓存</text>
+  </svg>
+  <div class="scrollhint">↓ 往下滚动</div>
+</header>
+
+<!-- 载体一：代码/配置 + 侧栏 hover 联动 -->
+<section id="s1">
+  <h2><span class="no">01</span>请求头里有什么</h2>
+  <p class="lede">载体一：<b>代码块 + 侧栏联动</b>。鼠标划过右侧要点，左边对应行会高亮。换掉这段 YAML 和要点即可复用。</p>
+  <div class="yamlwrap yaml-reveal">
+    <div class="yaml"><div class="hd">GET /index.html · 请求报文（简化）</div><pre><span class="ln">GET <span class="s">/index.html</span> HTTP/1.1</span><span class="ln">Host: <span class="s">example.com</span></span><span class="ln">User-Agent: <span class="s">Mozilla/5.0 …</span></span><span class="ln">Accept: <span class="s">text/html</span></span><span class="ln">Accept-Encoding: <span class="s">gzip, br</span></span><span class="ln hot">Cookie: <span class="s">session=…</span></span><span class="ln">If-None-Match: <span class="s">"abc123"</span></span><span class="ln">Connection: <span class="s">keep-alive</span></span></pre></div>
+    <div class="side">
+      <div class="item" data-hot="0"><b>请求行</b>方法 + 路径 + 协议版本，一行定死这次要干什么</div>
+      <div class="item" data-hot="5"><b>Cookie</b>身份的载体——服务端靠它认出你是谁</div>
+      <div class="item" data-hot="6"><b>协商缓存</b>带上上次的 ETag，内容没变就返回 304，省一次下载</div>
+    </div>
+  </div>
+</section>
+
+<!-- 载体二：Tab 切换 -->
+<section id="s2">
+  <h2><span class="no">02</span>方法决定语义</h2>
+  <p class="lede">载体二：<b>Tab 切换</b>。同一层级、互斥的几个概念，用 Tab 让读者自己翻。</p>
+  <div class="tabs" role="tablist">
+    <button aria-selected="true" data-m="GET">GET</button>
+    <button aria-selected="false" data-m="POST">POST</button>
+    <button aria-selected="false" data-m="PUT">PUT</button>
+    <button aria-selected="false" data-m="DELETE">DELETE</button>
+  </div>
+  <div class="prim">
+    <div class="pcard"><h3 id="mTitle"></h3><div class="en" id="mEn"></div><p id="mDesc"></p><div id="mChips"></div></div>
+    <div class="yaml"><div class="hd">典型用法</div><pre id="mYaml"></pre></div>
+  </div>
+</section>
+
+<!-- 载体三：左右映射动画 -->
+<section id="s3">
+  <h2><span class="no">03</span>域名怎么变成 IP</h2>
+  <p class="lede">载体三：<b>映射动画</b>。左列逐条点亮、连线飞过去——适合讲「A 怎么对应 B」的一切场景。</p>
+  <div class="map yaml-reveal" id="mapBox">
+    <div class="col"><h4>你输入的</h4>
+      <div class="row"><span class="db">example.com</span><span class="m">域名</span></div>
+      <div class="row"><span class="db">example.com</span><span class="m">带 www</span></div>
+      <div class="row"><span class="db">cdn.example.com</span><span class="m">静态资源</span></div>
+    </div>
+    <div class="mid"><svg viewBox="0 0 70 160" preserveAspectRatio="none"><line x1="0" y1="27" x2="70" y2="27"/><line x1="0" y1="80" x2="70" y2="80"/><line x1="0" y1="133" x2="70" y2="133"/></svg></div>
+    <div class="col"><h4>DNS 查完的</h4>
+      <div class="row"><span class="ont">93.184.216.34</span><span class="m">A 记录</span></div>
+      <div class="row"><span class="ont">93.184.216.34</span><span class="m">CNAME 收敛</span></div>
+      <div class="row"><span class="ont">边缘节点 104.x.x.x</span><span class="m">就近返回</span></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:14px">查过一次就有缓存：浏览器 → 系统 → 路由器 → 运营商，逐级往上问，TTL 决定记多久。</p>
+</section>
+
+<!-- 载体四：步骤链（按钮驱动） -->
+<section id="s4">
+  <h2><span class="no">04</span>按下回车之后</h2>
+  <p class="lede">载体四：<b>步骤链</b>。有先后顺序的流程，点按钮逐级点亮——把「过程」演出来而不是写出来。</p>
+  <button class="btnrun" id="btnGo">发送请求</button>
+  <span class="note" id="goHint">点击按钮，看完整链路。</span>
+  <div style="margin-top:14px" id="pipe">
+    <div class="step"><div class="b">1</div><div class="t"><b>DNS 解析</b><span>域名 → IP，缓存未命中就走递归查询</span></div></div>
+    <div class="step"><div class="b">2</div><div class="t"><b>TCP 三次握手</b><span>SYN → SYN-ACK → ACK，可靠连接建立 <span class="tag">1 个 RTT</span></span></div></div>
+    <div class="step"><div class="b">3</div><div class="t"><b>TLS 握手</b><span>交换证书、协商密钥，之后全程加密 <span class="tag">TLS 1.3 只要 1 个 RTT</span></span></div></div>
+    <div class="step"><div class="b">4</div><div class="t"><b>发请求，等响应</b><span>服务器处理，返回 200 和 HTML</span></div></div>
+    <div class="step"><div class="b">5</div><div class="t"><b>解析渲染</b><span>HTML → DOM，CSS → 样式树，JS 执行，像素上屏</span></div></div>
+  </div>
+</section>
+
+<!-- 载体五：时间线 -->
+<section id="s5">
+  <h2><span class="no">05</span>协议本身也在进化</h2>
+  <p class="lede">载体五：<b>时间线</b>。版本演进、历史脉络类内容的标准做法。</p>
+  <div class="tl yaml-reveal">
+    <div class="ver"><div class="v">HTTP/0.9</div><div class="d">1991 · 只有一行 GET</div></div><div class="tlarr">→</div>
+    <div class="ver"><div class="v">HTTP/1.1</div><div class="d">1997 · 长连接、缓存协商<br>队头阻塞出现</div></div><div class="tlarr">→</div>
+    <div class="ver"><div class="v">HTTP/2</div><div class="d">2015 · 多路复用<br>二进制分帧</div></div><div class="tlarr">→</div>
+    <div class="ver cur"><div class="v">HTTP/3</div><div class="d">2022 · QUIC over UDP<br>告别 TCP 队头阻塞</div></div>
+  </div>
+  <p class="note">现在超过一半的流量已经跑在 HTTP/2 及以上。</p>
+</section>
+
+</main>
+<script>
+// 滚动 reveal：进入视口加 .on，只触发一次
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');io.unobserve(e.target)}}),{threshold:.25});
+document.querySelectorAll('.yaml-reveal,header.hero').forEach(el=>io.observe(el));
+
+// hero 图谱错峰生长
+const hero=document.querySelector('.hero');hero.classList.add('on');
+document.querySelectorAll('#heroSvg .ed').forEach((e,i)=>e.style.transitionDelay=(i*.12)+'s');
+document.querySelectorAll('#heroSvg .nd,#heroSvg text').forEach((n,i)=>n.style.transitionDelay=(.3+i*.08)+'s');
+
+// 01 侧栏 hover → 行高亮
+const lns=document.querySelectorAll('#s1 .yaml .ln');
+lns.forEach((l,i)=>l.style.transitionDelay=Math.min(i*.06,1)+'s');
+document.querySelectorAll('#s1 .side .item').forEach(it=>{
+  it.addEventListener('mouseenter',()=>{lns.forEach(l=>l.classList.remove('hot'));lns[+it.dataset.hot]?.classList.add('hot')});
+  it.addEventListener('mouseleave',()=>lns.forEach(l=>l.classList.remove('hot')));
+});
+
+// 02 Tab 切换
+const M={
+ GET:{t:'GET',en:'读取，不改任何东西',d:'安全的、幂等的。浏览器对 GET 可以缓存、可以预取——因为它知道 GET 不会有副作用。',c:['幂等','可缓存','参数在 URL'],y:'GET <s>/api/users?page=2</s>\n\n<c># 响应\n200 OK\nContent-Type: application/json\n\n[{<s>"id": 1, "name": "…"</s>}]'},
+ POST:{t:'POST',en:'提交，创造新东西',d:'不幂等：同样的 POST 发两次，可能创建两条记录。浏览器不敢随便重发，所以跨站表单要额外防护。',c:['不幂等','有副作用','参数在 body'],y:'POST <s>/api/users</s>\nContent-Type: application/json\n\n{<s>"name": "新用户"</s>}\n\n<c># 响应\n201 Created\nLocation: <s>/api/users/42</s>'},
+ PUT:{t:'PUT',en:'整体替换，幂等',d:'发十次和发一次结果一样——最终状态都是「被替换成这个样子」。适合客户端掌握完整状态的更新。',c:['幂等','全量替换','对应资源 URI'],y:'PUT <s>/api/users/42</s>\nContent-Type: application/json\n\n{<s>"name": "改名后的全量对象"</s>}'},
+ DELETE:{t:'DELETE',en:'删除，也是幂等',d:'删一次和删十次，结果都是「不存在」。第二次通常返回 404 或 204，语义上都说得通。',c:['幂等','删除资源'],y:'DELETE <s>/api/users/42</s>\n\n<c># 响应\n204 No Content'}
+};
+function setM(k){const p=M[k];
+ mTitle.textContent=p.t;mEn.textContent=p.en;mDesc.textContent=p.d;
+ mChips.innerHTML=p.c.map(c=>'<span class="chip">'+c+'</span>').join('');
+ mYaml.innerHTML=p.y.replace(/<s>/g,'<span class="s">').replace(/<c>/g,'<span class="c">').replace(/<\/[sc]>/g,'</span>');
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+ document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected','false'));
+ b.setAttribute('aria-selected','true');setM(b.dataset.m);
+}));
+setM('GET');
+
+// 03 映射动画：进入视口逐条点亮
+new IntersectionObserver((es,o)=>es.forEach(e=>{if(e.isIntersecting){
+ document.querySelectorAll('#mapBox .row').forEach((r,i)=>setTimeout(()=>r.classList.add('on'),i*150));o.disconnect()}}),{threshold:.3}).observe(document.getElementById('mapBox'));
+
+// 04 步骤链
+const steps=[...document.querySelectorAll('#pipe .step')];
+document.getElementById('btnGo').addEventListener('click',()=>{
+ const b=document.getElementById('btnGo');b.disabled=true;steps.forEach(s=>s.classList.remove('lit'));
+ steps.forEach((s,i)=>setTimeout(()=>{s.classList.add('lit');
+  if(i===steps.length-1){b.disabled=false;document.getElementById('goHint').textContent='✔ 200 OK——首屏渲染完成。再点一次可重放。'}
+ },400+i*850));
+});
+</script>
+</body>
+</html>

@@ -10,7 +10,7 @@ platforms: [any]
 # HTML Explainer Pages
 
 单文件、零依赖、滚动叙事的讲解页。核心原则：**内容分屏，每屏只讲一件事，滚动触发一次性 reveal**。
-视觉设计（配色/字体/布局气质）交给 `anthropic-skills:frontend-design`，本 skill 只管三件事：
+默认浅色主题（用户偏好；个别场景要深色需先问）。视觉设计（配色/字体/布局气质）交给 `anthropic-skills:frontend-design`，本 skill 只管三件事：
 叙事结构、骨架模式、验证流水线——验证流水线是提速的大头。
 
 ## When to Use
@@ -52,6 +52,6 @@ platforms: [any]
 
 ## Example
 
-[example-ontos-explainer.html](example-ontos-explainer.html) —— Ontos 本体建模机制讲解页（真实产出），
-含全部四种载体：hover 联动 YAML、四类原语 Tab、列映射动画、审批步骤链、版本时间线、Hero SVG 图谱生长。
+[example-http-explainer.html](example-http-explainer.html) —— 「一个 HTTP 请求的一生」通用浅色模板，
+含全部载体：hover 联动 YAML、方法 Tab、映射动画、按钮驱动的步骤链、版本时间线、Hero SVG 生长。
 新页面以此为底稿换内容，比从零写快一半以上。
