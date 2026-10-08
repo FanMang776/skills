@@ -209,8 +209,13 @@ h1{font-family:var(--serif);font-weight:900;font-size:clamp(32px,5.6vw,54px);lin
 </main>
 <script>
 // 滚动 reveal：进入视口加 .on，只触发一次
+// IO 之外加 sweep 兜底——预览窗/后台标签页不产渲染帧时 IO 永不回调，页面要能在无帧环境正确显示
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');io.unobserve(e.target)}}),{threshold:.25});
 document.querySelectorAll('.yaml-reveal,header.hero').forEach(el=>io.observe(el));
+function sweep(){document.querySelectorAll('.yaml-reveal:not(.on)').forEach(el=>{
+  const r=el.getBoundingClientRect(); if(r.top<innerHeight*.85&&r.bottom>0)el.classList.add('on')})}
+window.addEventListener('scroll',()=>requestAnimationFrame(sweep),{passive:true});
+setInterval(sweep,900);sweep();
 
 // hero 图谱错峰生长
 const hero=document.querySelector('.hero');hero.classList.add('on');
@@ -244,8 +249,11 @@ document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',
 setM('GET');
 
 // 03 映射动画：进入视口逐条点亮
-new IntersectionObserver((es,o)=>es.forEach(e=>{if(e.isIntersecting){
- document.querySelectorAll('#mapBox .row').forEach((r,i)=>setTimeout(()=>r.classList.add('on'),i*150));o.disconnect()}}),{threshold:.3}).observe(document.getElementById('mapBox'));
+// 映射动画：mapBox 的 .on 由 IO/sweep 加，行随之逐条点亮（mapLight 幂等，interval 兜底）
+function mapLight(){if(!document.getElementById('mapBox').classList.contains('on'))return;
+ document.querySelectorAll('#mapBox .row:not(.on)').forEach((r,i)=>setTimeout(()=>r.classList.add('on'),i*150))}
+new IntersectionObserver((es,o)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');o.disconnect();mapLight()}}),{threshold:.3}).observe(document.getElementById('mapBox'));
+setInterval(mapLight,400);
 
 // 04 步骤链
 const steps=[...document.querySelectorAll('#pipe .step')];

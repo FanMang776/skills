@@ -36,6 +36,8 @@ platforms: [any]
    - 逐节验证：`preview_eval` 里 `window.scrollTo({top: el.offsetTop, behavior:'instant'})` → 截图
    - **截图空白/超时 ≠ 页面坏了**。先 DOM 断言（`elementFromPoint`、`textContent`、样式计算值），
      内容在就是预览窗合成器卡了：`window.scrollBy({top:±10})` 抖一下再截，通常就好
+   - 面板被遮挡时不产渲染帧：IO 不回调、transition 不走——页面要自带 sweep 兜底（示例已含），
+     验证靠 DOM 断言；`innerHeight===0` 说明面板没显示，先 `preview_resize` 设真实尺寸
    - 动画类内容验证用 `preview_eval` + Promise 等待终态（如步骤链全部 `.lit`、hint 文案变化）
    - 收尾必做：`preview_stop` + 删掉临时 `launch.json`
 5. **交互控件全部点一遍**（Tab 切换、按钮触发），交互后的状态变化用 DOM 断言而不是肉眼。
@@ -48,6 +50,8 @@ platforms: [any]
 | JS 动态生成的行也带 `.ln` 隐藏类 | 父级 `.on` 时机对不上就永远隐形；动态内容要么父容器先 `.on`，要么直接可见 |
 | Hero 里 absolute 定位的元素忘了父级 `position:relative` | 定位飞出屏幕；容器一律显式 `position:relative` |
 | 把预览窗渲染卡顿当页面 bug 反复改代码 | 先 DOM 断言再动手改；改代码是最后手段 |
+| 预览窗被遮挡/后台时不产渲染帧：IO 永不回调、CSS transition 停在起点、截图超时 | 页面内置 sweep 兜底（scroll + interval 幂等补 `.on`，示例已含）；验证改用 DOM 断言（`classList` / `matches`），别等视觉 |
+| 面板未显示时 `innerHeight` 可能是 0，IO 和 sweep 全部失效 | 判断标准：`innerHeight===0` 就是面板没显示，不是页面 bug——先 `preview_resize` 显式设 width/height 再验 |
 | reveal 选择器漏写新加的区块 | 选择器集中定义一处（如 `.yaml-reveal` 类标记），不散落 |
 
 ## Example

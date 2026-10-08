@@ -42,3 +42,5 @@ Hero 只花一次大胆（图谱生长或首屏主动画），其余全克制。
 - **动态生成的内容注意 reveal 时机** —— JS 生成的行别带隐藏类，或确保父容器先 `.on`
 - **零外部请求** —— 不引 CDN/webfont，离线双击就能开
 - **动效一律包 `prefers-reduced-motion`** —— 可访问性底线
+- **reveal 内置 sweep 兜底** —— 预览窗/后台标签页不产渲染帧时 IntersectionObserver 永不回调，
+  页面要在无帧环境也能正确显示（scroll + interval 幂等补 `.on`，示例已含）
