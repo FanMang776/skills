@@ -1,7 +1,7 @@
 ---
 name: three-question-domain-ramp
 description: Ramp up on an unfamiliar domain fast with consensus/divergence/self-quiz.
-version: 0.1.0
+version: 0.2.0
 author: cj (FanMang776)
 license: MIT
 platforms: [any]
@@ -45,6 +45,13 @@ do the cognitive work themselves or nothing is learned.
    recall. Tag each question with the framework it probes; attach a grading
    rubric (bullet key points). The template also carries the coverage map and
    the drill-round log.
+   **`quiz.md` is grader-owned.** The rubric is the scoring key: a learner who
+   sees it will pattern their answers to the key points and grading measures
+   nothing. Deliver questions to the learner in the conversation (or a
+   rubric-free copy) — never point them at the full `quiz.md`. The knowledge
+   map is likewise for grading and post-round review, not pre-reading: the
+   learner answers blind first, then fills gaps from the map/corpus only on
+   questions they missed (pretesting effect).
 5. **Drill loop (the bulk).** Round = learner answers in their own words →
    agent grades per rubric (right / partial / wrong + missed points) → for each
    miss, ask "where exactly is your answer wrong, which key points did you
@@ -69,6 +76,11 @@ without looking at the document.
   Both sides must exist in the corpus text.
 - **Answering for the learner.** Under time pressure the user will ask you to
   just answer. That voids the entire method — the grader cannot sit the exam.
+- **Handing the rubric (or map) to the learner.** Rubrics and the finished
+  knowledge map are grader artifacts. Learner-visible copies must not contain
+  rubrics; the learner answers blind, then checks sources only on graded
+  misses. Watch for the user "preparing" by reading both before round 1 —
+  that's the same trap as being answered for, just self-inflicted.
 
 ## Optional extension: knowledge-base integration
 
