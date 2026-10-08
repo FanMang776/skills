@@ -23,6 +23,12 @@ Hermes Agent 技能集合。每个 `media/`、`research/`、`windows/` 等分类
 |---|---|
 | windows-file-lock | 删除/重命名被占用的 Windows 文件（句柄扫描 + 安全 rm 脚本） |
 
+### teaching
+
+| 技能 | 说明 |
+|---|---|
+| [html-explainer-pages](teaching/html-explainer-pages/SKILL.md) | 把概念/调研结论做成单文件零依赖的滚动叙事 HTML 动画讲解页：分屏大纲 → reveal 骨架 → 浏览器预览验证流水线（截图卡顿≠页面坏的判定法），附真实产出示例 |
+
 ### autonomous-ai-agents
 
 | 技能 | 说明 |
