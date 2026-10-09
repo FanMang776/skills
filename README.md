@@ -35,6 +35,12 @@ Hermes Agent 技能集合。每个 `media/`、`research/`、`windows/` 等分类
 |---|---|
 | ubuntu-vnc-computer-viewer | 通过 x11vnc + websockify 把局域网 Ubuntu 桌面接入 Hermes Computer viewer |
 
+### testing
+
+| 技能 | 说明 |
+|---|---|
+| [page-test-frontend](testing/page-test-frontend/SKILL.md) | Playwright + 系统 Edge 无头浏览器驱动已部署前端做功能测试：骨架脚本复用、networkidle 永不收敛、组件库下拉/弹窗/toast/隐藏 tab pane 的踩坑规则表，含测试纪律与失败报告格式 |
+
 ## 安装
 
 把对应技能目录复制到 `~/.hermes/skills/` 下，或按 Hermes 的技能加载机制配置路径。
