@@ -89,3 +89,7 @@ shallow 信号按前端形态识别：透传 props 的包装组件、只包一�
 | 「报告太空不好看」 | 没有发现就写无发现；硬凑的报告消耗的是信任 |
 | 「仓库没写规则，我按最佳实践提」 | 没声明的规则不臆造；文档缺失走 Speculative 元候选 |
 | 「顺手把这个改了」 | 只读纪律；建议进报告，行动留给人 |
+
+## 思想来源
+
+深化机会的分析框架（shallow/deep module、deletion test、seam 纪律、依赖四分类）参考自 [mattpocock/skills](https://github.com/mattpocock/skills) 的 `codebase-design` 与 `improve-codebase-architecture`，后者又源自 John Ousterhout《A Philosophy of Software Design》。本技能是定期巡检形态：无 grilling loop 与 HTML 报告，范围收窄为上周合入 main 的提交。原版 MIT 许可。
