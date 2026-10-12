@@ -9,6 +9,7 @@ Hermes Agent 技能集合。每个 `media/`、`research/`、`windows/` 等分类
 | 技能 | 说明 |
 |---|---|
 | [manim-narrated-video](media/manim-narrated-video/SKILL.md) | Manim + edge-tts 旁白视频完整制作流程：文案 → 配音（词级时间戳）→ 字幕对齐 → 草稿帧检 → 1080p60 渲染 → 字幕全量审计收工。含同步防漂移架构与全部踩坑记录 |
+| [remotion-knowledge-video](media/remotion-knowledge-video/SKILL.md) | Remotion + edge-tts 知识类竖屏视频管线：TTS 实测时长驱动场景 → 四层视觉组件（玻璃拟态/bokeh/动效字卡）→ whisper 字级字幕对齐 + 能量曲线校准 → 句首弱音增益包络。含字幕禁建区、PPT 艺术字反模式、代理下载 Chrome 等全部踩坑 |
 
 ### research
 
