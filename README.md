@@ -35,6 +35,12 @@ Hermes Agent 技能集合。每个 `media/`、`research/`、`windows/` 等分类
 |---|---|
 | ubuntu-vnc-computer-viewer | 通过 x11vnc + websockify 把局域网 Ubuntu 桌面接入 Hermes Computer viewer |
 
+### engineering
+
+| 技能 | 说明 |
+|---|---|
+| [codebase-architecture-patrol](engineering/codebase-architecture-patrol/SKILL.md) | 只读架构巡检：只看上周合入 main 的提交，找「浅模块 → 深模块」深化机会，每候选过 deletion test + 依赖四分类定测试策略，卡片式 markdown 报告落在仓库外。宁缺毋滥、越界即停（不改代码不开 MR） |
+
 ### testing
 
 | 技能 | 说明 |
