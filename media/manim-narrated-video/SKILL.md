@@ -17,7 +17,7 @@ license: MIT
 ## Prerequisites
 
 - **manim 0.21+**（Python 3.8+）：先 `python -c "import manim"` 确认当前解释器能导入；多版本共存的机器上，用能导入 manim 的那个解释器的完整路径显式调用
-- **edge-tts**：`pip install edge-tts`，无需 API key
+- **edge-tts**：`pip install edge-tts`，无需 API key。**403「Invalid response status」≠ 网络问题**：2026-10 微软把后端迁到 `api.msedgeservices.com/tts/cognitiveservices/websocket/v1`，所有版本一律 403（而 `voices/list` 同 IP 仍 200，别在代理/换 IP/校时上浪费时间）。修复 = 改 `edge_tts/constants.py`（`python -m edge_tts` 和 `edge-tts` CLI 往往是两份安装，都要改）：`BASE_URL = "api.msedgeservices.com/tts/cognitiveservices"`，`WSS_URL = f"wss://{BASE_URL}/websocket/v1?Ocp-Apim-Subscription-Key={TRUSTED_CLIENT_TOKEN}"`，`VOICE_LIST` 同理；`CHROMIUM_FULL_VERSION` 不动（新主机仍认旧 token 算法）。`pip 升级会改回去`。另外新主机限流凶：段间 sleep ≥8s，每段带 6-8 次重试退避，429 重试成功是常态
 - **ffmpeg/ffprobe** 在 PATH（裁剪、拼接、抽帧、音量检测全靠它）
 - **字体**：中文视频需要系统里有覆盖中文字形的字体（Windows 自带 Microsoft YaHei，macOS 可用 PingFang SC，Linux 推荐 Noto Sans CJK SC）——把示例里的字体名替换成你机器上实际可用的
 - 无 LaTeX 也可跑：全部用 `Text()`，禁 MathTex/DecimalNumber

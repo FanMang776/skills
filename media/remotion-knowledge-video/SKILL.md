@@ -40,6 +40,20 @@ cm = edge_tts.Communicate(text, "zh-CN-YunxiNeural", rate="+8%")  # voice 必须
 await cm.save(f"{seg}.mp3")
 # 立刻 ffprobe 实测每段时长 -> tts-durations.json（估算不可信）
 ```
+
+**403「Invalid response status」≠ 网络问题（2026-10 起必踩）**：微软把 Edge 朗读后端从 `speech.platform.bing.com/.../readaloud/edge/v1` 迁到了 `api.msedgeservices.com/tts/cognitiveservices/websocket/v1`，所有 edge-tts 版本（含最新）一律 403，而同 IP 的 `voices/list` 仍返回 200——**别在代理、换 IP、校时上浪费时间**。修复 = 改 `edge_tts/constants.py`（机器上往往有多份安装：`python -m edge_tts` 用的和 `edge-tts` CLI 的 venv 是两份，`grep -rl speech.platform.bing.com .../site-packages/edge_tts/constants.py` 找全）：
+
+```python
+BASE_URL = "api.msedgeservices.com/tts/cognitiveservices"
+WSS_URL = f"wss://{BASE_URL}/websocket/v1?Ocp-Apim-Subscription-Key={TRUSTED_CLIENT_TOKEN}"
+VOICE_LIST = f"https://{BASE_URL}/voices/list?Ocp-Apim-Subscription-Key={TRUSTED_CLIENT_TOKEN}"
+# CHROMIUM_FULL_VERSION 保持不动 → Sec-MS-GEC-Version 仍是 1-143.0.3650.75（新主机仍认旧 token 算法）
+```
+
+验证：带 `Ocp-Apim-Subscription-Key` + `Sec-MS-GEC` + `Sec-MS-GEC-Version=1-143.0.3650.75` + `ConnectionId` 开 WebSocket，拿到 **101** 即通（之后服务器等你发首帧配置，读超时=成功，不是失败）。注意 `pip install -U edge-tts` 会把常量改回去，升级后要重打。
+
+**新主机限流凶**：每段之间 `sleep ≥8s`，每段包 6-8 次重试（退避 10-60s）；429 后重试成功是常态，别看到 429 就放弃整批。
+
 - 场景帧数 = `ceil((tts时长 + 0.6s呼吸) * 30)`，写进 theme.ts 统一管理。
 - mp3 放 Remotion 项目 `public/`，场景内 `<Audio src={staticFile('pN.mp3')} />`。
 

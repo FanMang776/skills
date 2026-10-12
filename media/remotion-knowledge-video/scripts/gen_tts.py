@@ -17,16 +17,27 @@ SEGMENTS = {
 
 import edge_tts
 
-async def gen(seg_id, text):
+async def gen(seg_id, text, attempts=8):
     out = os.path.join(BASE, f"{seg_id}.mp3")
-    cm = edge_tts.Communicate(text, "zh-CN-YunxiNeural", rate="+8%")
-    await cm.save(out)
-    return out
+    # 2026-10 微软迁移后端后：constants.py 需指向 api.msedgeservices.com（见 SKILL.md 第3节）；
+    # 新主机限流凶，429 是常态，必须重试 + 段间隔等待
+    for i in range(attempts):
+        try:
+            cm = edge_tts.Communicate(text, "zh-CN-YunxiNeural", rate="+8%")
+            await cm.save(out)
+            if os.path.exists(out) and os.path.getsize(out) > 2000:
+                return out
+            print(f"  {seg_id} attempt {i+1}: empty output, retrying")
+        except Exception as e:
+            print(f"  {seg_id} attempt {i+1} failed: {type(e).__name__} {str(e)[:70]}")
+        await asyncio.sleep(10 + i * 8)
+    raise RuntimeError(f"{seg_id} failed after {attempts} attempts")
 
 async def main():
     durations = {}
     for seg_id, text in SEGMENTS.items():
         await gen(seg_id, text)
+        await asyncio.sleep(8)  # 段间限速，防 429
         r = subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "format=duration",
              "-of", "default=noprint_wrappers=1:nokey=1", os.path.join(BASE, f"{seg_id}.mp3")],
