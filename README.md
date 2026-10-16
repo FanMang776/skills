@@ -4,6 +4,12 @@ Hermes Agent 技能集合。每个 `media/`、`research/`、`windows/` 等分类
 
 ## 技能列表
 
+### creative
+
+| 技能 | 说明 |
+|---|---|
+| [gta-style-meme-image-prompt](creative/gta-style-meme-image-prompt/SKILL.md) | 写 ChatGPT 生图提示词，复刻 GTA 圣安地列斯低多边形截图风梗图：CJ 式主角 + 荒诞场景四要素模板、中文标题精确渲染话术、参考图 vision 拆解流程 |
+
 ### media
 
 | 技能 | 说明 |
