@@ -1,21 +1,21 @@
 import React from 'react';
 import { useCurrentFrame } from 'remotion';
-import { C } from '../theme';
+import { C, WIDTH, HEIGHT } from '../theme';
 
 // 确定性伪随机（渲染必须可复现）
 const prand = (i: number, salt = 1) =>
   (Math.sin(i * 127.1 + salt * 311.7) * 43758.5453) % 1;
 
-// 背景层 v3：三层景深 bokeh 光斑 + 细网格 + 渐晕
+// 背景层 v3：三层景深 bokeh 光斑 + 细网格 + 渐晕（16:9 横屏）
 // 光斑大而虚（近景）、小而实（远景），缓慢上浮，方向一致
 export const Background: React.FC = () => {
   const frame = useCurrentFrame();
-  const spots = Array.from({ length: 14 }).map((_, i) => {
+  const spots = Array.from({ length: 16 }).map((_, i) => {
     const depth = Math.abs(prand(i, 7)); // 0 远 1 近
-    const x = Math.abs(prand(i, 1)) * 1080;
+    const x = Math.abs(prand(i, 1)) * WIDTH;
     const speed = 0.15 + depth * 0.5;
     const size = 8 + depth * 46;
-    const y = 1980 - ((frame * speed + Math.abs(prand(i, 4)) * 2200) % 2300);
+    const y = HEIGHT + 200 - ((frame * speed + Math.abs(prand(i, 4)) * 1600) % 1700);
     const op = 0.05 + depth * 0.13;
     const warm = Math.abs(prand(i, 6)) > 0.8;
     return { x, y, size, op, color: warm ? C.yellow : C.accent, blur: 2 + (1 - depth) * 6 };

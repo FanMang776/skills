@@ -15,6 +15,12 @@ export const C = {
 
 export const FPS = 30;
 
+// 画布：16:9 横屏
+export const WIDTH = 1920;
+export const HEIGHT = 1080;
+// 安全区：横屏在竖屏平台小窗播放时四边被裁，核心信息留 5%
+export const SAFE = 96;
+
 // TTS 实测时长（秒），来自 tts-durations.json
 export const TTS = {
   p1: 10.416, p2: 19.32, p3: 27.0, p4: 32.688,

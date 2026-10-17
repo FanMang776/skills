@@ -39,7 +39,7 @@ export const DisplayTitle: React.FC<{
   top: number;
   align?: 'center' | 'left';
   lineHeight?: number;
-}> = ({ text, showFrom, size = 96, color = C.text, top, align = 'center', lineHeight = 1.25 }) => {
+}> = ({ text, showFrom, size = 88, color = C.text, top, align = 'center', lineHeight = 1.25 }) => {
   const f = useCurrentFrame();
   if (f < showFrom) return null;
   const t = f - showFrom;
@@ -51,7 +51,7 @@ export const DisplayTitle: React.FC<{
   return (
     <div
       style={{
-        position: 'absolute', top, left: align === 'center' ? 0 : 90, right: align === 'center' ? 0 : 90,
+        position: 'absolute', top, left: align === 'center' ? 0 : 120, right: align === 'center' ? 0 : 120,
         textAlign: align,
         fontFamily: F.display, fontWeight: 900, fontSize: size, letterSpacing: 2,
         color, lineHeight,
@@ -112,7 +112,7 @@ export const GlassPanel: React.FC<{
 );
 
 // ---------- 扫光 ----------
-export const ShineSweep: React.FC<{ showFrom: number; width?: number }> = ({ showFrom, width = 1080 }) => {
+export const ShineSweep: React.FC<{ showFrom: number; width?: number }> = ({ showFrom, width = 1920 }) => {
   const frame = useCurrentFrame();
   if (frame < showFrom) return null;
   const t = interpolate(frame, [showFrom, showFrom + 34], [-0.3, 1.3], {

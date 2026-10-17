@@ -19,7 +19,7 @@ export const Caption: React.FC<{ text: string; showFrom: number }> = ({
     <div
       style={{
         position: 'absolute',
-        bottom: 150,
+        bottom: 180,
         left: 60,
         right: 60,
         display: 'flex',
@@ -52,8 +52,8 @@ export const Badge: React.FC = () => (
   <div
     style={{
       position: 'absolute',
-      right: 28,
-      top: 60,
+      right: 64,
+      top: 54,
       fontSize: 24,
       color: C.muted,
       backgroundColor: 'rgba(13,17,23,0.7)',
