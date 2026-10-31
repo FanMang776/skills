@@ -1,7 +1,7 @@
 ---
 name: remotion-knowledge-video
-description: Use when 把技术方法论/教程做成带动画的16:9横屏讲解视频：TTS 分段→Remotion 分层合成→whisper 字幕对齐→响度修复→渲染交付。全流程代码化，改稿秒重渲。
-version: 1.1.0
+description: Use when 把技术方法论/教程做成带动画的16:9横屏讲解视频：TTS 分段→Remotion 分层合成→whisper 字幕对齐→响度修复→渲染交付。全流程代码化，改稿秒重渲。支持两套视觉体系：玻璃拟态科技风 / 马赛克像素小人风。
+version: 1.2.0
 author: cj (FanMang776)
 license: MIT
 platforms: [any]
@@ -23,11 +23,11 @@ requires: [node>=18, ffmpeg, python+pip(edge-tts, faster-whisper, numpy), Remoti
 
 ## 1. 前期：环境（Windows 实测坑）
 
-- 系统代理是注册表 IE 代理（如 127.0.0.1:7897），env 无变量。Remotion 下载 headless Chrome 会直连 storage.googleapis.com 然后 ECONNRESET/超时。**解法：手动 curl 走代理下载 chrome-for-testing 的 zip，解压后用 `REMOTION_CHROME_EXECUTABLE=<路径>` 指向本地 chrome-headless-shell.exe**，浏览器目录留好复用，永不再下。
+- 系统代理是注册表 IE 代理（如 127.0.0.1:7897），env 无变量。Remotion 下载 headless Chrome 会直连 storage.googleapis.com 然后 ECONNRESET/超时。**解法：手动 curl 走代理下载 chrome-for-testing 的 zip，解压后渲染时指给 Remotion**，浏览器目录留好复用，永不再下。**坑（2026-10 实测，Remotion 4.0.537）：`REMOTION_CHROME_EXECUTABLE` 环境变量已不生效，它照样去下自己的 120MB headless-shell 然后 ECONNRESET——必须用 CLI 参数 `--browser-executable="<chrome路径>"`**（`remotion.config.ts` 里 `Config.setBrowserExecutable()` 也可以）。
 - TS 报 `Cannot find module './xxx'` 先查相对路径层级（compositions/ 子目录里要用 `../`），别怀疑编码。
 - 渲染命令模板：
   ```bash
-  REMOTION_CHROME_EXECUTABLE=<chrome路径> npx remotion render <CompId> out/xxx.mp4
+  npx remotion render <CompId> out/xxx.mp4 --browser-executable="<chrome路径>"
   ```
 
 ## 2. 逐字稿规矩（沿用 douyin-video-production skill）
@@ -59,6 +59,16 @@ VOICE_LIST = f"https://{BASE_URL}/voices/list?Ocp-Apim-Subscription-Key={TRUSTED
 - 场景帧数 = `ceil((tts时长 + 0.6s呼吸) * 30)`，写进 theme.ts 统一管理。
 - mp3 放 Remotion 项目 `public/`，场景内 `<Audio src={staticFile('pN.mp3')} />`。
 
+### 3b. 火山豆包 TTS 路线（2026-10 实测，EP2 验证）
+
+edge-tts 之外的合规选项：火山引擎「语音合成 2.0」（新版控制台 API Key 单头鉴权，音色即剪映/抖音同款家族，如 刘飞2.0=`zh_male_liufei_uranus_bigtts`）。参考实现 `scripts/gen_tts_volc.py` + `scripts/gen_subs_volc.py`。
+
+- **接口**：POST `https://openspeech.bytedance.com/api/v3/tts/unidirectional`，headers 三件套 `X-Api-Key` / `X-Api-Resource-Id: seed-tts-2.0` / `X-Api-Request-Id`；响应是 NDJSON 行流，`code=0` 带 `data`(b64音频)，`20000000`=结束。
+- **字幕时间戳（三个坑全踩过）**：①`enable_subtitle: true` 必须放 **`req_params.audio_params` 里面**（放顶层无效）；②官方文档说返回 `TTSSubtitle` 事件——那是 WebSocket 接口的，**HTTP 单向流式实际在 `sentence` 字段**里（`sentence.words[]` 含 `word/startTime/endTime`，**单位是秒**不是 1e7 纳秒）；③**时间戳系统性偏早**：每段 mp3 有 0.6~0.8s 静音头但词表从 t=0 开始，且长段（>20s）有累积漂移。
+- **字幕生成走专用脚本不走 rebuild**：volc 的 `sentence.words` 本身是原文顺序，直接顺序映射即可，不需要 edge-tts 那套 SequenceMatcher 模糊对齐；逐段用「词表首词 t vs 细粒度 PCM 能量 onset（20ms 窗）」实测整体偏移，每行再吸附 ±0.6s 内最近发声点，最后**行首 0.3s 能量闭环**（< -32dB 整行后移 0.3s）。silencedetect(-35dB) 会漏短停顿导致 QA 大量误报，**验收判据要用直接 PCM 能量**（行首 0.3s < -32dB 算早挂）。
+- **语速**：刘飞 2.0 默认语速明显快于 edge-tts Yunxi+8%（同样文稿短约 30%），要控时长用 `audio_params.speech_rate`（-50~100）。
+- 限流远比 edge-tts 宽松，段间隔 2s 足够；费用约 5 元/万字符，新用户送 2 万字符。
+
 ## 4. 视觉体系（画面丰富的底线）
 
 深色科技风主题色（#0d1117 系 + 荧光绿强调），**每个场景至少两层叠加**。可复用组件（项目 `src/components/Rich.tsx`）：
@@ -78,6 +88,33 @@ VOICE_LIST = f"https://{BASE_URL}/voices/list?Ocp-Apim-Subscription-Key={TRUSTED
 **字体**：微软雅黑默认渲染显廉价。下载思源黑体（SourceHanSansSC Heavy/Bold/Normal）放 `public/fonts/`，@font-face 注册后 `fontFamily: 'SourceHan'`。中文渲染后必须抽帧验证无豆腐块。
 
 **背景**：`Background.tsx` 三层景深 bokeh 光斑（确定性伪随机 prand，禁 Math.random）+ 细网格 + 渐晕。
+
+### 风格 B：马赛克像素小人风（2026-10 Docker 视频验证通过）
+
+整支视频的视觉语言换成低分辨率像素画：**所有场景画在 480×270 逻辑网格上，`transform: scale(4)` 放大到 1920×1080**（`PixelStage` 组件，见 `templates/Pixel.tsx`，直接拷进项目）。与风格 A 的差异全在约束上：
+
+- **时钟**：`useTick()` = `Math.floor(frame/2.5)`，12fps 阶跃——像素动画宁可卡顿，越顺滑越没像素味。弹性缓动/easeOut 一律不用，入场用 `scale(pop)` 三阶跃或直接出现
+- **限色板**：深海军蓝底 `#0d1420` + Docker 蓝 `#2496ed` + 荧光青 `#3ddc97`，全部颜色进 theme 常量，禁止临时取色
+- **组件库**（templates/Pixel.tsx 全套）：`R`(像素矩形)、`Guy`(小人:walk 4 帧摆臂/idle 呼吸+眨眼/talk 张嘴/point)、`Whale`(吉祥物:双层集装箱+翘尾+喷水泡泡)、`Crate`、`Terminal`(打字机逐行)、`TitleCard`、`PopText`(节拍字卡)、`CheckRow`(✓/✗ 清单行)、`GridBg`(像素网格+渐晕)。角色动作靠 2-4 帧循环+位移，不画中间帧
+- **字体**：等宽英文用 `Consolas, "Microsoft YaHei", monospace` + fontWeight 900；中文仍用思源黑体
+- **反模式**：模糊光斑（像素世界里光晕=穿帮，背景渐晕用 radial-gradient 一层即可）、抗锯齿动效、真实照片素材、Math.random（用 prand）
+- **字幕**：沿用第 5 节管线不变，样式改直角方块底（无圆角），字幕带禁建区规则不变
+
+**致命陷阱——R 组件的相对定位**：`R` 是 `position:absolute`，相对**最近的 positioned 祖先**而不是舞台。场景顶层直接用没问题；一旦嵌进 positioned div（卡片、字卡），坐标就变成相对该 div——踩过两次（P2 卡片顶栏飞到屏幕中央、P5 盾牌漂移）。规则：**嵌进 positioned 容器里的 R，坐标从容器左上角算**。
+
+## 4b. 节拍驱动场景（风格无关，必做）
+
+**画面必须按口播逐句推进，每句台词对应一段专属画面动作**——静态构图摆好元素等标签弹出，用户会打回（原话：「画面内容单调，不够丰富，只展示了一小部分动作，没有和讲解内容对应」）。丰富不是元素多，是动作跟着说话走。
+
+做法：字幕定稿后（第 5 节产出 `subtitles.json`），把每句台词的全局时间换算成场景局部帧，写进 `src/beats.ts` 常量表；场景里每个 beat 安排一个可视化响应——元素入场、状态翻转、清单逐项打叉、演示推进、角色换动作。最小示例：
+
+```ts
+// src/beats.ts —— P4 场景从全局帧 2477 起,该句「现在合上盖」在全局 104.58s
+export const B4 = { close: 660 };  // (104.58 - 2477/30) * 30 = 660 局部帧
+// 场景里:  {frame > B4.close && <合盖动画/>}
+```
+
+抽帧 QA 增加一问：**「这一秒口播说了什么，画面是否在演」**——答不上来就是死帧，按死帧补 beat，而不是加装饰。
 
 ## 5. 字幕（踩坑最多的环节）
 
@@ -132,12 +169,15 @@ async for chunk in cm.stream():
 
 **注意区分弱起和标点停顿**：句中 0.5s 的深静音是逗号，不是弱起，别给停顿加增益。
 
+**闭环验收的阈值陷阱（EP2 实测）**：volc 合成的音频底噪比 edge-tts 高，loudnorm 拉响度后底噪越过 -42dB 绝对检测线，闭环检测出的「onset」会从 50 个掉到 8 个（全是噪声波动），必然假 FAIL。修复：`onset_boost.py` 已改为**用源音频的真实 onset 位置清单**去输出音频上测响度（响度处理不改时间轴），不用输出音频重新检测 onset。
+
 ## 8. 渲染后 QA 清单
 
 **字幕对齐必须机器全量验收，不要让用户反复试看**（用户明确要求）：渲完后用能量曲线逐行测量——每条字幕 (a) 开头 0.3s 必须有语音（早挂检测）(b) 行内语音覆盖率（自然语音词间停顿 25-40%，≥2.5s 的行低于 45% 才算异常）(c) 与最近发声边界的误差。三项全绿（早挂 0、FAIL 0）才交付，不达标自己修完再渲。
 
 - [ ] 时长 = 各场景帧数总和 ÷ 30
 - [ ] 抽帧（中段/结尾段/字幕最长段）vision 查叠压、裁切、穿帮、中文渲染
+- [ ] 节拍抽检（4b）：随机 3 个时间点，对照字幕问「画面是否在演这一句」，死帧补 beat
 - [ ] 字幕逐句：能量曲线校准后无倒流、无 >8.5s 长挂
 - [ ] 句首响度抽测 ≥ -20dB
 - [ ] 片尾按需裁剪（如「关注我」段在渲染前就从逐字稿删掉，别渲染后再剪）
